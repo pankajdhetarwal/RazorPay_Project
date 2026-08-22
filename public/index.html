@@ -177,12 +177,19 @@
     /* ══ MAIN GRID ═══════════════════════════════════════ */
     .main-grid {
       display: grid;
-      /* Adjusted to give more space to the table and keep form fixed */
       grid-template-columns: 420px 1fr;
       gap: 24px;
       align-items: start;
     }
     @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) {
+      .hero { flex-direction: column; text-align: center; padding: 24px; gap: 20px; }
+      .hero-stat { padding-left: 0; border-left: none; border-top: 1px solid var(--border); padding-top: 20px; text-align: center; width: 100%; }
+      .stats-row { grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
+      .detail-grid { grid-template-columns: 1fr !important; }
+      .brand-text p { display: none; }
+      .nav-btn { display: none; }
+    }
 
     /* ══ PANEL ═══════════════════════════════════════════ */
     .panel {
@@ -293,7 +300,8 @@
     .filter-label { font-size: 14px; color: var(--muted); margin-left: auto; }
 
     /* Table Adjustments */
-    table { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; }
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+    table { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; min-width: 800px; }
     
     /* Adjusted column widths for a breathy feel */
     th:nth-child(1) { width: 28%; } /* Instruction */
@@ -593,7 +601,7 @@
         <button class="filter-chip"        id="fc-held"     onclick="setFilter('held')">Held</button>
         <span class="filter-label" id="filterLabel"></span>
       </div>
-      <div>
+      <div class="table-responsive">
         <table>
           <thead>
             <tr>
