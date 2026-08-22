@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agent Guardian — AI Transaction Safety</title>
+  <meta name="description" content="Real-time AI transaction watchdog. Catches prompt injection and intent drift before money moves." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      /* Sleek Obsidian/Linear Theme (Dark) */
+      --bg:         #000000;
+      --bg2:        #0a0a0a;
+      --surface:    #111111;
+      --surface2:   #1a1a1a;
+      --border:     rgba(255,255,255,0.12);
+      --border2:    rgba(255,255,255,0.2);
+      --text:       #ffffff;
+      --muted:      #a1a1aa;
+      --dim:        #71717a;
+
+      /* Refined Accents */
+      --accent:     #8b5cf6; /* Vibrant Purple */
+      --accent-glow:rgba(139,92,246,0.15);
+      
+      --green:      #10b981;
+      --green-bg:   rgba(16,185,129,0.1);
+      
+      --amber:      #f59e0b;
+      --amber-bg:   rgba(245,158,11,0.1);
+      
+      --red:        #f43f5e;
+      --red-bg:     rgba(244,63,94,0.1);
+
+      --radius:     12px;
+      --radius-sm:  8px;
+    }
+
+    [data-theme="light"] {
+      /* Clean High-Contrast Light Theme */
+      --bg:         #fafafa;
+      --bg2:        #f4f4f5;
+      --surface:    #ffffff;
+      --surface2:   #f4f4f5;
+      --border:     rgba(0,0,0,0.1);
+      --border2:    rgba(0,0,0,0.15);
+      --text:       #09090b;
+      --muted:      #52525b;
+      --dim:        #71717a;
+
+      --accent:     #6d28d9;
+      --accent-glow:rgba(109,40,217,0.1);
+      
+      --green:      #059669;
+      --green-bg:   rgba(16,185,129,0.15);
+      
+      --amber:      #d97706;
+      --amber-bg:   rgba(245,158,11,0.15);
+      
+      --red:        #e11d48;
+      --red-bg:     rgba(225,29,72,0.15);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Expanded width for a breathy look */
+    .app { max-width: 95%; margin: 0 auto; padding: 0 20px 100px; }
+
+    /* ══ NAVBAR ══════════════════════════════════════════ */
+    .navbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 30px 0;
+      margin-bottom: 40px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 16px; text-decoration: none; }
+    .brand-logo {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .brand-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .brand-text h1 {
+      font-size: 24px; font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.5px;
+    }
+    .brand-text p { font-size: 14px; color: var(--muted); margin-top: 2px; }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+
+    .live-pill {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px;
+      border-radius: 100px;
+      background: var(--green-bg);
+      color: var(--green);
+      font-size: 14px; font-weight: 600;
+      margin-left: 8px;
+    }
+    .live-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+    .nav-btn {
+      padding: 10px 20px; border-radius: 100px;
+      border: 1px solid var(--border2);
+      background: var(--surface);
+      color: var(--text); font-size: 14px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .nav-btn:hover { border-color: var(--text); color: var(--bg); background: var(--text); }
+
+    /* ══ HERO STRIP ══════════════════════════════════════ */
+    .hero {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px 40px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 30px;
+    }
+    .hero-left h2 {
+      font-size: 32px; font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+    .hero-left p { font-size: 17px; color: var(--muted); line-height: 1.6; max-width: 800px; }
+    
+    .hero-stat { text-align: right; flex-shrink: 0; padding-left: 40px; border-left: 1px solid var(--border); }
+    .hero-stat .big { font-size: 56px; font-weight: 700; line-height: 1; color: var(--accent); }
+    .hero-stat .lbl { font-size: 15px; color: var(--muted); margin-top: 12px; }
+
+    /* ══ STAT CARDS ══════════════════════════════════════ */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .stat-card:hover { border-color: var(--accent); background: var(--surface2); }
+    .stat-card.active { border-color: var(--accent); background: var(--surface2); box-shadow: 0 0 0 1px var(--accent); }
+
+    .stat-label { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 16px; }
+    .stat-value { font-size: 42px; font-weight: 700; line-height: 1; color: var(--text); }
+    .stat-value.val-green { color: var(--green); }
+    .stat-value.val-amber { color: var(--amber); }
+
+    /* ══ MAIN GRID ═══════════════════════════════════════ */
+    .main-grid {
+      display: grid;
+      /* Adjusted to give more space to the table and keep form fixed */
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 1200px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* ══ PANEL ═══════════════════════════════════════════ */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-title {
+      font-size: 18px; font-weight: 600; color: var(--text);
+    }
+    .panel-meta { font-size: 14px; color: var(--muted); }
+
+    /* ══ FORM ════════════════════════════════════════════ */
+    .form-body { padding: 24px; }
+
+    .field { margin-bottom: 24px; }
+    .field label {
+      display: block; font-size: 14px; font-weight: 600;
+      color: var(--text); margin-bottom: 10px;
+    }
+
+    .input-wrap input {
+      width: 100%; background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      padding: 16px 20px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .input-wrap input:focus { border-color: var(--accent); }
+    
+    .quick-chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+    .chip {
+      padding: 10px 16px; border-radius: 100px;
+      background: var(--bg2); border: 1px solid var(--border2);
+      font-size: 14px; color: var(--muted); font-weight: 500; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-submit {
+      width: 100%; padding: 18px;
+      border: none; border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: #fff; font-family: 'Inter', sans-serif;
+      font-size: 16px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-submit:hover:not(:disabled) { filter: brightness(1.1); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-danger-outline {
+      width: 100%; padding: 16px;
+      border: 1px solid var(--red-border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--red); font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-danger-outline:hover { background: var(--red-bg); }
+
+    /* result box */
+    .result-box {
+      display: none; margin-top: 24px;
+      border-radius: var(--radius-sm); padding: 24px;
+      border-left: 4px solid;
+    }
+    .result-box.visible { display: block; }
+    .result-box.approved { background: var(--green-bg); border-color: var(--green); }
+    .result-box.held     { background: var(--amber-bg); border-color: var(--amber); }
+    .result-box.error    { background: var(--red-bg);   border-color: var(--red); }
+    
+    .result-decision { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .approved .result-decision { color: var(--green); }
+    .held     .result-decision { color: var(--amber); }
+    .error    .result-decision { color: var(--red); }
+    
+    .result-reason { font-size: 15px; color: var(--text); line-height: 1.6; }
+    .result-risk   { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--muted); margin-top: 12px; font-weight: 500; }
+
+    /* ══ AUDIT TABLE ══════════════════════════════════════ */
+    .filter-bar {
+      padding: 24px 30px;
+      display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .filter-chip {
+      padding: 10px 20px; border-radius: 100px;
+      border: 1px solid var(--border2);
+      background: transparent;
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .filter-chip:hover { border-color: var(--text); color: var(--text); }
+    .filter-chip.active { background: var(--text); border-color: var(--text); color: var(--bg); }
+    .filter-label { font-size: 14px; color: var(--muted); margin-left: auto; }
+
+    /* Table Adjustments */
+    table { width: 100%; border-collapse: collapse; font-size: 15px; table-layout: fixed; }
+    
+    /* Adjusted column widths for a breathy feel */
+    th:nth-child(1) { width: 28%; } /* Instruction */
+    th:nth-child(2) { width: 28%; } /* Product */
+    th:nth-child(3) { width: 12%; } /* Price */
+    th:nth-child(4) { width: 12%; } /* Decision */
+    th:nth-child(5) { width: 10%; } /* Risk */
+    th:nth-child(6) { width: 10%; } /* Time */
+
+    thead th {
+      padding: 20px 30px;
+      text-align: left;
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr.main-row {
+      border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.15s;
+    }
+    tbody tr.main-row:hover { background: var(--surface2); }
+    tbody td { padding: 24px 30px; vertical-align: middle; word-wrap: break-word; }
+
+    .col-instruction { font-weight: 500; color: var(--text); line-height: 1.5; }
+    .col-product     { color: var(--muted); line-height: 1.5; }
+    .col-price       { font-family: 'JetBrains Mono', monospace; font-size: 15px; }
+    .col-time        { color: var(--dim); font-size: 14px; font-family: 'JetBrains Mono', monospace; }
+
+    /* decision badge */
+    .badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 8px 16px; border-radius: 100px;
+      font-size: 13px; font-weight: 600;
+    }
+    .b-approved { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+    .b-held     { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+    .b-rejected { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
+
+    /* detail row */
+    .detail-row { display: none; }
+    .detail-row.open { display: table-row; }
+    .detail-cell {
+      padding: 0 40px 40px 40px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-inner { padding-top: 30px; }
+    
+    .detail-grid  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px; }
+    .d-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 20px;
+    }
+    .d-box .dk { font-size: 14px; color: var(--muted); margin-bottom: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .d-box .dv { font-size: 17px; font-weight: 600; }
+    
+    .dv-green { color: var(--green); }
+    .dv-amber { color: var(--amber); }
+    .dv-red   { color: var(--red); }
+
+    .detail-text-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .detail-text-box .label { font-size: 14px; color: var(--muted); margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .detail-text-box .content { font-size: 17px; font-weight: 500; color: var(--text); line-height: 1.6; }
+    .detail-text-box .content-agent { font-style: normal; font-size: 16px; color: var(--muted); border-left: 3px solid var(--border); padding-left: 16px; font-family: 'JetBrains Mono', monospace; }
+
+    .empty-state { text-align: center; padding: 100px 20px; color: var(--dim); font-size: 17px; }
+
+    .spinner {
+      display: inline-block; width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: currentColor; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ══ ACCURACY MODAL ═══════════════════════════════════ */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      z-index: 1000; align-items: center; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 40px;
+      width: min(760px, 92vw); max-height: 85vh; overflow-y: auto;
+      position: relative;
+    }
+    .modal-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .modal-sub   { font-size: 14px; color: var(--muted); margin-bottom: 30px; }
+    .modal-close {
+      position: absolute; top: 20px; right: 20px;
+      background: none; border: 1px solid var(--border2);
+      color: var(--text); border-radius: 8px;
+      padding: 6px 12px; cursor: pointer; font-size: 14px;
+    }
+    .modal-close:hover { background: var(--surface2); }
+    .metric-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 24px; }
+    .metric-box {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 20px; text-align: center;
+    }
+    .metric-box .mk { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 10px; }
+    .metric-box .mv { font-size: 32px; font-weight: 700; color: var(--accent); }
+    .metric-box .mv.ok { color: var(--green); }
+    .section-title {
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin: 24px 0 12px;
+    }
+    .scenario-list { display: flex; flex-direction: column; gap: 8px; }
+    .scenario-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-radius: var(--radius-sm);
+      background: var(--bg2); border: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .scenario-row .sid { font-family: 'JetBrains Mono',monospace; font-weight: 600; color: var(--muted); flex-shrink: 0; min-width: 36px; }
+    .scenario-row .sdesc { color: var(--text); flex: 1; margin: 0 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .scenario-row .stag { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 100px; flex-shrink: 0; }
+    .stag-ok  { background: var(--green-bg); color: var(--green); }
+    .stag-err { background: var(--red-bg);   color: var(--red); }
+
+    /* ══ CHECKPOINT SECTIONS in expanded row ═══════════════ */
+    .cp-section {
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .cp-header {
+      padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+    .cp-header.cp1 { background: rgba(139,92,246,0.08); }
+    .cp-header.cp2 { background: rgba(6,182,212,0.07); }
+    .cp-label {
+      font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .cp-label.cp1 { color: var(--accent); }
+    .cp-label.cp2 { color: var(--cyan, #06b6d4); }
+    .cp-desc  { font-size: 13px; color: var(--muted); }
+    .cp-body  { padding: 16px 20px; background: var(--surface); }
+    .cp-grid  { display: grid; gap: 12px; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="/" class="brand">
+      <div class="brand-logo"><img src="/logo.jpg" alt="Agent Guardian Logo" /></div>
+      <div class="brand-text">
+        <h1>Agent Guardian</h1>
+        <p>AI Transaction Safety Layer</p>
+      </div>
+    </a>
+    <div class="nav-right">
+      <button class="nav-btn" onclick="toggleTheme()" id="themeToggleBtn">Light Mode</button>
+      <button class="nav-btn" onclick="refreshAll()">Refresh Data</button>
+      <button class="nav-btn" onclick="runTestSuite()">Run Accuracy Tests</button>
+      <div class="live-pill"><div class="live-dot"></div> Live</div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-left">
+      <h2>Transaction Security for AI Agents</h2>
+      <p>A watchdog layer that sits between your LLM shopping agent and real money movement. Automatically detects and blocks prompt injection attacks and intent drift with full reasoning.</p>
+    </div>
+    <div class="hero-stat">
+      <div class="big" id="heroAccuracy">—</div>
+      <div class="lbl" id="heroAccuracyLabel">Running accuracy test...</div>
+    </div>
+  </div>
+
+  <!-- STAT CARDS -->
+  <div class="stats-row">
+    <div class="stat-card active" id="cardAll" onclick="setFilter('all')">
+      <div class="stat-label">Total Transactions</div>
+      <div class="stat-value" id="statTotal">—</div>
+    </div>
+    <div class="stat-card" id="cardApproved" onclick="setFilter('approved')">
+      <div class="stat-label">Approved</div>
+      <div class="stat-value val-green" id="statApproved">—</div>
+    </div>
+    <div class="stat-card" id="cardHeld" onclick="setFilter('held')">
+      <div class="stat-label">Held for Review</div>
+      <div class="stat-value val-amber" id="statHeld">—</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT: Form panels -->
+    <div style="display:flex;flex-direction:column;gap:40px">
+
+      <!-- Purchase form -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Try a Purchase</div>
+          <span class="panel-meta">Live LLM Agent</span>
+        </div>
+        <div class="form-body">
+          <div class="field">
+            <label>User ID</label>
+            <div class="input-wrap">
+              <input id="userId" type="text" placeholder="e.g. user_pankaj" />
+            </div>
+            <div class="quick-chips">
+              <span class="chip" onclick="setUser('user_pankaj')">user_pankaj</span>
+              <span class="chip" onclick="setUser('user_test')">user_test</span>
+              <span class="chip" onclick="setUser('anonymous')">anonymous</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>User Instruction</label>
+            <div class="input-wrap">
+              <input id="instruction" type="text" placeholder="Buy one notebook under 200 rupees" />
+            </div>
+            <div class="quick-chips">
+              <span class="chip" onclick="useChip('buy one notebook, budget 200 rupees', 200)">Clean: Notebook</span>
+              <span class="chip" onclick="useChip('buy a wireless mouse under 500', 500)">Clean: Mouse</span>
+              <span class="chip" onclick="useChip('buy a notebook combo pack', 200)">Attack: Injection</span>
+              <span class="chip" onclick="useChip('buy one notebook, budget 50', 50)">Drift: Over Budget</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Budget Limit (₹)</label>
+            <div class="input-wrap">
+              <input id="budget" type="number" placeholder="Optional budget limit" min="0" />
+            </div>
+          </div>
+          <button class="btn-submit" id="purchaseBtn" onclick="submitPurchase()">
+            <span id="btnText">Submit Transaction</span>
+          </button>
+          <div class="result-box" id="resultBox">
+            <div class="result-decision" id="resultDecision"></div>
+            <div class="result-reason" id="resultReason"></div>
+            <div class="result-risk" id="resultRisk"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Profile card -->
+      <div class="panel" id="profileCard" style="display:none">
+        <div class="panel-header">
+          <div class="panel-title">User Spending Profile</div>
+          <span class="panel-meta" id="profileUserId"></span>
+        </div>
+        <div class="form-body">
+          <div class="detail-grid" style="grid-template-columns:repeat(2,1fr)">
+            <div class="d-box"><div class="dk">Avg Spend</div><div class="dv dv-green" id="profileAvg">—</div></div>
+            <div class="d-box"><div class="dk">Max Spend</div><div class="dv" id="profileMax">—</div></div>
+            <div class="d-box"><div class="dk">Total Approved</div><div class="dv" id="profileTotal">—</div></div>
+            <div class="d-box"><div class="dk">Top Category</div><div class="dv" id="profileCat">—</div></div>
+          </div>
+          <p style="font-size:13px;color:var(--dim);margin-top:16px;line-height:1.5">Personal baseline check activates after 3+ approved transactions for this user.</p>
+        </div>
+      </div>
+
+      <!-- Failure demo -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Fail-Safe Demo</div>
+          <span class="panel-meta">Simulated</span>
+        </div>
+        <div class="form-body">
+          <p style="font-size:16px;color:var(--muted);line-height:1.6;margin-bottom:24px">
+            Simulate a language model timeout. Demonstrates that the Guardian defaults to a secure <strong>Held</strong> state when the AI fails, preventing unauthorized execution.
+          </p>
+          <button class="btn-danger-outline" onclick="submitFailure()">
+            Simulate API Timeout
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Audit log -->
+    <div class="panel" style="min-height:700px">
+      <div class="panel-header">
+        <div class="panel-title">Audit Log</div>
+        <span class="panel-meta" id="logCount">Loading...</span>
+      </div>
+      <div class="filter-bar">
+        <button class="filter-chip active" id="fc-all"      onclick="setFilter('all')">All</button>
+        <button class="filter-chip"        id="fc-approved" onclick="setFilter('approved')">Approved</button>
+        <button class="filter-chip"        id="fc-held"     onclick="setFilter('held')">Held</button>
+        <span class="filter-label" id="filterLabel"></span>
+      </div>
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Instruction</th>
+              <th>Product Selected</th>
+              <th>Price</th>
+              <th>Decision</th>
+              <th>Risk</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="logBody">
+            <tr><td colspan="6"><div class="empty-state">No transactions recorded yet.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACCURACY MODAL -->
+<div class="modal-overlay" id="accuracyModal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('accuracyModal').classList.remove('open')">Close</button>
+    <div class="modal-title">Measured Accuracy Report</div>
+    <div class="modal-sub" id="modalSub">Running tests against labeled scenarios...</div>
+
+    <div class="metric-grid">
+      <div class="metric-box"><div class="mk">Overall Accuracy</div><div class="mv ok" id="mAccuracy">—</div></div>
+      <div class="metric-box"><div class="mk">Precision</div><div class="mv" id="mPrecision">—</div></div>
+      <div class="metric-box"><div class="mk">Recall</div><div class="mv" id="mRecall">—</div></div>
+    </div>
+
+    <div class="section-title">Dev Set (used while building rules)</div>
+    <div class="metric-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="metric-box"><div class="mk">Precision</div><div class="mv" id="mDevPrecision">—</div></div>
+      <div class="metric-box"><div class="mk">Recall</div><div class="mv" id="mDevRecall">—</div></div>
+    </div>
+
+    <div class="section-title">Held-Out Set (sealed — never seen during rule building)</div>
+    <div class="scenario-list" id="scenarioList"></div>
+
+    <p style="font-size:13px;color:var(--dim);margin-top:24px;line-height:1.6">
+      <strong>Held-out set</strong> scenarios were locked before any rules were written. The Guardian was tuned only on the dev set. The held-out score is the honest reported accuracy.
+    </p>
+  </div>
+</div>
+
+<script>
+// ─── Theme Management ─────────────────────────────────────
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeButton(savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  updateThemeButton(newTheme);
+}
+
+function updateThemeButton(theme) {
+  const btn = document.getElementById('themeToggleBtn');
+  if (theme === 'dark') {
+    btn.textContent = 'Light Mode';
+  } else {
+    btn.textContent = 'Dark Mode';
+  }
+}
+initTheme(); // Run immediately
+
+// ─── App State & Logic ────────────────────────────────────
+let allLogs = [];
+let currentFilter = 'all';
+let openDetailId = null;
+
+async function loadStats() {
+  try {
+    const data = await fetch('/stats').then(r => r.json());
+    document.getElementById('statTotal').textContent    = data.total ?? '—';
+    document.getElementById('statApproved').textContent = data.approved ?? '—';
+    document.getElementById('statHeld').textContent     = data.held ?? '—';
+
+    const acc = data.accuracy;
+    const heroEl   = document.getElementById('heroAccuracy');
+    const labelEl  = document.getElementById('heroAccuracyLabel');
+
+    if (acc && acc.accuracy != null) {
+      heroEl.textContent  = acc.accuracy + '%';
+      const p = acc.heldOutPrecision != null ? (acc.heldOutPrecision * 100).toFixed(0) : '?';
+      const r = acc.heldOutRecall    != null ? (acc.heldOutRecall    * 100).toFixed(0) : '?';
+      labelEl.textContent = `Precision ${p}% · Recall ${r}% · ${acc.totalScenarios} scenarios`;
+    } else {
+      heroEl.textContent  = 'Run Test';
+      labelEl.textContent = 'Run: node testing/runAccuracyTest.js';
+    }
+  } catch {}
+}
+
+async function loadLog() {
+  try {
+    const logs = await fetch('/audit-log').then(r => r.json());
+    allLogs = logs;
+    renderTable();
+    document.getElementById('logCount').textContent = `${logs.length} Records`;
+  } catch {}
+}
+
+function renderTable() {
+  const filtered = currentFilter === 'all' ? allLogs : allLogs.filter(l => l.decision === currentFilter);
+  const tbody = document.getElementById('logBody');
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No records found.</div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = '';
+  filtered.forEach(log => {
+    const risk = log.riskScore ?? 0;
+    const riskColor = risk >= 70 ? 'var(--red)' : risk >= 40 ? 'var(--amber)' : 'var(--green)';
+    
+    const tr = document.createElement('tr');
+    tr.className = 'main-row';
+    tr.onclick = () => toggleDetail(log._id);
+
+    const badgeClass = log.decision === 'approved' ? 'b-approved' : log.decision === 'held' ? 'b-held' : 'b-rejected';
+    const decLabel = log.decision.charAt(0).toUpperCase() + log.decision.slice(1);
+
+    tr.innerHTML = `
+      <td class="col-instruction">${esc(log.userInstruction)}</td>
+      <td class="col-product">${esc(log.agentChosenProduct || 'None')}</td>
+      <td class="col-price">${log.agentChosenPrice != null ? '₹'+log.agentChosenPrice : '—'}</td>
+      <td><span class="badge ${badgeClass}">${decLabel}</span></td>
+      <td style="color:${riskColor};font-weight:700;font-family:'JetBrains Mono',monospace">${risk}/100</td>
+      <td class="col-time">${fmt(log.createdAt)}</td>
+    `;
+
+    const dtd = document.createElement('tr');
+    dtd.className = 'detail-row';
+    dtd.id = 'detail-' + log._id;
+    
+    const checks = log.checks || {};
+    const cp1Pass = !checks.injectionDetected;
+    const cp2Issues = [];
+    if (checks.budgetMatch === false)     cp2Issues.push('Budget exceeded');
+    if (checks.personalBaseline === true) cp2Issues.push('Unusual spend for user');
+    if (checks.velocityFlag === true)     cp2Issues.push('High velocity');
+    if (checks.quantityDriftFlag === true)cp2Issues.push('Quantity drift');
+
+    dtd.innerHTML = `<td class="detail-cell" colspan="6">
+      <div class="detail-inner">
+
+        <!-- CHECKPOINT 1: AGENT-SIDE -->
+        <div class="cp-section">
+          <div class="cp-header cp1">
+            <span class="cp-label cp1">Checkpoint 1 — Agent Side</span>
+            <span class="cp-desc">Runs before the LLM reads product data &middot; checks raw description text for injection</span>
+          </div>
+          <div class="cp-body">
+            <div class="cp-grid" style="grid-template-columns:1fr">
+              ${dbox('Prompt Injection',
+                checks.injectionDetected === true
+                  ? `Detected &mdash; &ldquo;${esc(checks.injectionPhraseFound || '')}&rdquo;`
+                  : checks.injectionDetected === false ? 'Clear &mdash; no injection phrases found in description' : 'Not run',
+                checks.injectionDetected === true ? 'dv-red' : checks.injectionDetected === false ? 'dv-green' : '')}
+            </div>
+          </div>
+        </div>
+
+        <!-- CHECKPOINT 2: PAYMENT-SIDE -->
+        <div class="cp-section">
+          <div class="cp-header cp2">
+            <span class="cp-label cp2">Checkpoint 2 — Payment Side</span>
+            <span class="cp-desc">Runs at payment gate &middot; uses only structured fields: price, userId, quantity</span>
+          </div>
+          <div class="cp-body">
+            <div class="cp-grid" style="grid-template-columns:repeat(2,1fr)">
+              ${dbox('Budget Match',
+                checks.budgetMatch === true ? 'Yes &mdash; price within stated budget'
+                : checks.budgetMatch === false ? 'No &mdash; price exceeds budget' : 'No budget set',
+                checks.budgetMatch === true ? 'dv-green' : checks.budgetMatch === false ? 'dv-red' : '')}
+              ${dbox('Personal Baseline',
+                checks.personalBaseline === true
+                  ? `Unusual &mdash; ${esc(checks.personalBaselineReason || 'above user average')}`
+                  : checks.personalBaseline === false ? 'Normal &mdash; consistent with user history' : 'N/A (new or anonymous user)',
+                checks.personalBaseline === true ? 'dv-amber' : checks.personalBaseline === false ? 'dv-green' : '')}
+              ${dbox('Velocity',
+                checks.velocityFlag === true ? `High &mdash; ${checks.velocityRecentCount || 'too many'} purchases in 1 min`
+                : checks.velocityFlag === false ? `Normal &mdash; ${checks.velocityRecentCount || 1} in 1 min` : 'N/A',
+                checks.velocityFlag === true ? 'dv-red' : checks.velocityFlag === false ? 'dv-green' : '')}
+              ${dbox('Category Match',
+                checks.categoryMatch === true ? 'Yes' : checks.categoryMatch === false ? 'No &mdash; wrong product type' : '—',
+                checks.categoryMatch === true ? 'dv-green' : checks.categoryMatch === false ? 'dv-amber' : '')}
+            </div>
+          </div>
+        </div>
+
+        <!-- DECISION ENGINE OUTPUT -->
+        <div class="detail-text-box">
+          <div class="label">Decision Engine Output</div>
+          <div class="content">${esc(log.reason || 'No reasoning provided.')}</div>
+        </div>
+
+        ${log.agentReasoning ? `
+        <div class="detail-text-box">
+          <div class="label">Agent Justification (what the LLM said)</div>
+          <div class="content content-agent">&ldquo;${esc(log.agentReasoning)}&rdquo;</div>
+        </div>
+        ` : ''}
+      </div>
+    </td>`;
+
+    tbody.appendChild(tr);
+    tbody.appendChild(dtd);
+  });
+
+  if (openDetailId) {
+    const d = document.getElementById('detail-' + openDetailId);
+    if (d) d.classList.add('open');
+  }
+}
+
+function toggleDetail(id) {
+  const d = document.getElementById('detail-' + id);
+  if (!d) return;
+  const isOpen = d.classList.toggle('open');
+  openDetailId = isOpen ? id : null;
+}
+
+function dbox(label, value, colorClass) {
+  return `<div class="d-box"><div class="dk">${label}</div><div class="dv ${colorClass}">${value}</div></div>`;
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  ['all','approved','held'].forEach(k => {
+    const fc = document.getElementById('fc-'+k);
+    const cc = document.getElementById('card'+k.charAt(0).toUpperCase()+k.slice(1)) || document.getElementById('cardAll');
+    if (fc) fc.className = 'filter-chip' + (k === f ? ' active' : '');
+    if (cc) cc.className = 'stat-card' + (k === f ? ' active' : '');
+  });
+  renderTable();
+}
+
+async function loadUserProfile() {
+  const userId = document.getElementById('userId').value.trim();
+  if (!userId || userId === 'anonymous') {
+    document.getElementById('profileCard').style.display = 'none';
+    return;
+  }
+  try {
+    const profile = await fetch(`/user-profile/${encodeURIComponent(userId)}`).then(r => r.ok ? r.json() : null);
+    const card = document.getElementById('profileCard');
+    if (!profile) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
+    document.getElementById('profileUserId').textContent = userId;
+    document.getElementById('profileAvg').textContent   = profile.avgSpend ? `₹${Math.round(profile.avgSpend)}` : '—';
+    document.getElementById('profileMax').textContent   = profile.maxSpend ? `₹${profile.maxSpend}` : '—';
+    document.getElementById('profileTotal').textContent = profile.totalApproved ?? '—';
+    const cats = profile.categoryHistory ? Object.entries(profile.categoryHistory) : [];
+    const topCat = cats.sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('profileCat').textContent  = topCat ? `${topCat[0]} (${topCat[1]}x)` : '—';
+  } catch {}
+}
+
+// Refresh profile whenever userId changes
+document.getElementById('userId').addEventListener('change', loadUserProfile);
+
+function setUser(id) {
+  document.getElementById('userId').value = id;
+  loadUserProfile();
+}
+
+async function submitPurchase() {
+  const userId      = document.getElementById('userId').value.trim() || 'anonymous';
+  const instruction = document.getElementById('instruction').value.trim();
+  const budgetVal   = document.getElementById('budget').value;
+  if (!instruction) return;
+
+  const btn = document.getElementById('purchaseBtn');
+  btn.disabled = true;
+  document.getElementById('btnText').innerHTML = '<span class="spinner"></span> Processing...';
+
+  const box = document.getElementById('resultBox');
+  box.className = 'result-box';
+
+  try {
+    const body = { instruction, userId };
+    if (budgetVal) body.budget = parseFloat(budgetVal);
+    const log = await fetch('/purchase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(r => r.json());
+    showResult(log);
+    await refreshAll();
+    await loadUserProfile();
+  } catch(e) {
+    showResult({ decision: 'error', reason: e.message });
+  } finally {
+    btn.disabled = false;
+    document.getElementById('btnText').textContent = 'Submit Transaction';
+  }
+}
+
+async function submitFailure() {
+  const log = await fetch('/purchase-with-failure', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ instruction: 'buy one notebook', budget: 200 }),
+  }).then(r => r.json());
+  showResult(log);
+  await refreshAll();
+}
+
+function showResult(log) {
+  const box = document.getElementById('resultBox');
+  const dec = document.getElementById('resultDecision');
+  const reas = document.getElementById('resultReason');
+  const risk = document.getElementById('resultRisk');
+
+  const labels = { approved: 'Transaction Approved', held: 'Transaction Held', rejected: 'Transaction Rejected', error: 'System Error' };
+  dec.textContent  = labels[log.decision] || log.decision;
+  reas.textContent = log.reason || '—';
+  risk.textContent = log.riskScore != null ? `Risk Score: ${log.riskScore}/100` : '';
+
+  box.className = `result-box visible ${log.decision === 'approved' ? 'approved' : log.decision === 'held' ? 'held' : 'error'}`;
+}
+
+function useChip(instruction, budget) {
+  document.getElementById('instruction').value = instruction;
+  document.getElementById('budget').value      = budget;
+}
+
+async function runTestSuite() {
+  document.getElementById('accuracyModal').classList.add('open');
+  document.getElementById('modalSub').textContent = 'Running tests...';
+  document.getElementById('mAccuracy').textContent   = '…';
+  document.getElementById('mPrecision').textContent  = '…';
+  document.getElementById('mRecall').textContent     = '…';
+  document.getElementById('mDevPrecision').textContent = '…';
+  document.getElementById('mDevRecall').textContent    = '…';
+  document.getElementById('scenarioList').innerHTML   = '';
+
+  try {
+    const data = await fetch('/run-accuracy-test').then(r => r.json());
+    if (data.error) throw new Error(data.error);
+
+    const fmt2 = n => n == null ? 'N/A' : n + '%';
+    document.getElementById('mAccuracy').textContent    = fmt2(data.overall?.accuracy);
+    document.getElementById('mPrecision').textContent   = fmt2(data.overall?.precision);
+    document.getElementById('mRecall').textContent      = fmt2(data.overall?.recall);
+    document.getElementById('mDevPrecision').textContent= fmt2(data.devSet?.precision);
+    document.getElementById('mDevRecall').textContent   = fmt2(data.devSet?.recall);
+
+    const ts = new Date(data.generatedAt).toLocaleTimeString('en-IN');
+    document.getElementById('modalSub').textContent =
+      `${data.totalScenarios} labeled scenarios · ${data.devSet.count} dev + ${data.heldOutSet.count} held-out · Run at ${ts}`;
+
+    const list = document.getElementById('scenarioList');
+    (data.heldOutSet?.perScenario || []).forEach(s => {
+      const row = document.createElement('div');
+      row.className = 'scenario-row';
+      const pred = s.predictedBad ? 'BAD' : 'fine';
+      const actual = s.actualIsBad ? 'BAD' : 'fine';
+      const correct = s.correct;
+      
+      let tagHtml = '';
+      if (s.resultType === 'TN') tagHtml = '<span class="stag stag-ok">✓ True Neg</span>';
+      else if (s.resultType === 'TP') tagHtml = '<span class="stag stag-ok">✓ True Pos</span>';
+      else if (s.resultType === 'FP') tagHtml = '<span class="stag stag-err" title="Legitimate text caught by keyword filter">✗ False Pos</span>';
+      else if (s.resultType === 'FN') tagHtml = '<span class="stag stag-err" title="Paraphrased injection missed by keyword filter">✗ False Neg</span>';
+
+      row.innerHTML = `
+        <span class="sid">#${s.id}</span>
+        <div style="flex:1; margin: 0 16px; min-width:0;">
+          <div style="font-size:12px; color:var(--muted); margin-bottom:4px;">Pred: <strong>${pred}</strong> · Actual: <strong>${actual}</strong></div>
+          <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${esc(s.description)}">${esc(s.description)}</div>
+        </div>
+        ${tagHtml}
+      `;
+      list.appendChild(row);
+    });
+
+    // Also update the hero stats
+    await loadStats();
+  } catch(e) {
+    document.getElementById('modalSub').textContent = 'Error: ' + e.message;
+  }
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('accuracyModal')) {
+    document.getElementById('accuracyModal').classList.remove('open');
+  }
+}
+
+async function refreshAll() { await Promise.all([loadStats(), loadLog()]); }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(iso) { return iso ? new Date(iso).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) : '—'; }
+
+refreshAll();
+setInterval(refreshAll, 5000);
+</script>
+</body>
+</html>
