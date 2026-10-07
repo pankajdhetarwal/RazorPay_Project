@@ -171,7 +171,7 @@ app.post("/purchase", asyncHandler(async (req, res) => {
   }
 
   return res.json(log);
-});
+}));
 
 // ─── POST /purchase-with-failure ───────────────────────────────────────────────
 // Demo endpoint: simulates an agent timeout to show the safe-default "hold" behavior.
@@ -191,13 +191,13 @@ app.post("/purchase-with-failure", asyncHandler(async (req, res) => {
     ...log.toObject(),
     _demo: "Simulated agent failure. Real failures (timeout, bad parse, API outage) all route here.",
   });
-});
+}));
 
 // ─── GET /audit-log ────────────────────────────────────────────────────────────
 app.get("/audit-log", asyncHandler(async (req, res) => {
   const logs = await AuditLog.find({}).sort({ createdAt: -1 }).limit(100);
   res.json(logs);
-});
+}));
 
 // ─── GET /stats ─────────────────────────────────────────────────────────
 app.get("/stats", asyncHandler(async (req, res) => {
@@ -224,7 +224,7 @@ app.get("/stats", asyncHandler(async (req, res) => {
   } catch { /* results.json not generated yet — that’s fine */ }
 
   res.json({ total, approved, held, accuracy });
-});
+}));
 
 // ─── GET /user-profile/:userId ─────────────────────────────────────────────────
 // Returns a user's learned spending profile — shown in the dashboard.
@@ -245,13 +245,13 @@ app.get("/user-profile/:userId", asyncHandler(async (req, res) => {
       acc[cat] = (acc[cat] || 0) + 1; return acc;
     }, {}),
   });
-});
+}));
 
 // ─── GET /products ─────────────────────────────────────────────────────────────
 app.get("/products", asyncHandler(async (req, res) => {
   const products = await Product.find({}, "name price category platform isTrickProduct trickType");
   res.json(products);
-});
+}));
 
 // ─── GET /run-accuracy-test ────────────────────────────────────────────────────
 // Runs the accuracy test in-process and returns the results as JSON.
