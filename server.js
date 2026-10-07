@@ -33,6 +33,9 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+// ─── Error Handling Wrapper ───────────────────────────────────────────────────
+const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
 // ─── DB connection ─────────────────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGODB_URI)
@@ -55,7 +58,7 @@ mongoose
 //             decision + explanation. This is what gets saved to the Audit Log.
 //
 // Body: { "instruction": "buy one notebook", "budget": 200, "userId": "user_pankaj" }
-app.post("/purchase", async (req, res) => {
+app.post("/purchase", asyncHandler(async (req, res) => {
   const { instruction, budget, userId = "anonymous" } = req.body;
 
   if (!instruction) {
@@ -172,7 +175,7 @@ app.post("/purchase", async (req, res) => {
 
 // ─── POST /purchase-with-failure ───────────────────────────────────────────────
 // Demo endpoint: simulates an agent timeout to show the safe-default "hold" behavior.
-app.post("/purchase-with-failure", async (req, res) => {
+app.post("/purchase-with-failure", asyncHandler(async (req, res) => {
   const { instruction = "buy one notebook", userId = "anonymous" } = req.body;
 
   const log = await AuditLog.create({
@@ -191,13 +194,13 @@ app.post("/purchase-with-failure", async (req, res) => {
 });
 
 // ─── GET /audit-log ────────────────────────────────────────────────────────────
-app.get("/audit-log", async (req, res) => {
+app.get("/audit-log", asyncHandler(async (req, res) => {
   const logs = await AuditLog.find({}).sort({ createdAt: -1 }).limit(100);
   res.json(logs);
 });
 
 // ─── GET /stats ─────────────────────────────────────────────────────────
-app.get("/stats", async (req, res) => {
+app.get("/stats", asyncHandler(async (req, res) => {
   const [total, approved, held] = await Promise.all([
     AuditLog.countDocuments({}),
     AuditLog.countDocuments({ decision: "approved" }),
@@ -225,7 +228,7 @@ app.get("/stats", async (req, res) => {
 
 // ─── GET /user-profile/:userId ─────────────────────────────────────────────────
 // Returns a user's learned spending profile — shown in the dashboard.
-app.get("/user-profile/:userId", async (req, res) => {
+app.get("/user-profile/:userId", asyncHandler(async (req, res) => {
   const profile = await UserProfile.findOne({ userId: req.params.userId });
   if (!profile) return res.status(404).json({ error: "No profile found yet." });
 
@@ -245,7 +248,7 @@ app.get("/user-profile/:userId", async (req, res) => {
 });
 
 // ─── GET /products ─────────────────────────────────────────────────────────────
-app.get("/products", async (req, res) => {
+app.get("/products", asyncHandler(async (req, res) => {
   const products = await Product.find({}, "name price category platform isTrickProduct trickType");
   res.json(products);
 });
@@ -308,6 +311,12 @@ app.get("/run-accuracy-test", (req, res) => {
   }
 });
 
+
+// ─── Global Error Handler ──────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error("Express Error:", err.message);
+  res.status(500).json({ error: err.message, decision: "error" });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
