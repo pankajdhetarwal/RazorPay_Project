@@ -315,7 +315,7 @@ app.get("/run-accuracy-test", (req, res) => {
 // ─── Global Error Handler ──────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error("Express Error:", err.message);
-  res.status(500).json({ error: err.message, decision: "error" });
+  res.status(500).json({ reason: err.message, decision: "error" });
 });
 
 const PORT = process.env.PORT || 3000;
